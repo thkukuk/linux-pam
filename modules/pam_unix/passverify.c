@@ -111,7 +111,7 @@ PAMH_ARG_DECL(int verify_pwd_hash,
 			 * Ok, we don't know the crypt algorithm, but maybe
 			 * libcrypt knows about it? We should try it.
 			 */
-#if defined(CRYPT_CHECKSALT_AVAILABLE) && CRYPT_CHECKSALT_AVAILABLE
+#ifdef HAVE_CRYPT_CHECKSALT
 			/* Get the status of the hash from checksalt */
 			int retval_checksalt = crypt_checksalt(hash);
 

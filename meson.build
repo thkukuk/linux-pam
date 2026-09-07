@@ -246,7 +246,7 @@ if not libcrypt.found()
   libcrypt = cc.find_library('crypt')
 endif
 crypt_h = cdata.get('HAVE_CRYPT_H') == 1 ? '''#include <crypt.h>''' : '''#include <unistd.h>'''
-foreach f: ['crypt_r']
+foreach f: ['crypt_r', 'crypt_checksalt']
   if cc.has_function(f, prefix: crypt_h,
                      args: '-D_GNU_SOURCE',
                      dependencies: libcrypt)

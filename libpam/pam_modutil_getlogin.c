@@ -25,10 +25,14 @@ pam_modutil_getlogin(pam_handle_t *pamh)
 	return logname;
     }
 
+#ifndef HAVE_WORKING_GETLOGIN
+    return NULL;
+#else
     logname = getlogin();
     if (logname == NULL) {
       return NULL;
     }
+#endif
 
     curr_user = strdup(logname);
     if (curr_user == NULL) {

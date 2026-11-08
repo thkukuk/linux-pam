@@ -238,6 +238,45 @@ foreach ident: check_functions
   endif
 endforeach
 
+
+# musl's getlogin() does not follow POSIX: instead of returning the login
+# name associated with the controlling terminal, it just returns the
+# LOGNAME (or USER) environment variable, which is trivial to spoof.
+# Check for this at configure time and, if found, disable the use of
+# getlogin() so that callers like pam_wheel fall back to PAM_RUSER.
+getlogin_check = '''
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#define PAM_GETLOGIN_CHECK_VALUE "pam-getlogin-check-value"
+
+int main(void)
+{
+  const char *name;
+
+  if (setenv("LOGNAME", PAM_GETLOGIN_CHECK_VALUE, 1) != 0)
+    return 2;
+
+  name = getlogin();
+
+  return (name != NULL && strcmp(name, PAM_GETLOGIN_CHECK_VALUE) == 0) ? 0 : 1;
+}
+'''
+
+if meson.can_run_host_binaries()
+  getlogin_result = cc.run(getlogin_check, name: 'getlogin() honours LOGNAME (broken, e.g. musl)')
+  if getlogin_result.compiled() and getlogin_result.returncode() == 0
+    warning('getlogin() implementation is broken (it just returns the LOGNAME environment variable, as musl libc does), disabling its use')
+  else
+    cdata.set('HAVE_WORKING_GETLOGIN', 1)
+  endif
+else
+  warning('Cannot run test binaries while cross compiling, assuming getlogin() works correctly')
+  cdata.set('HAVE_WORKING_GETLOGIN', 1)
+endif
+
+
 enable_pam_keyinit = cc.get_define('__NR_keyctl', prefix: '#include <sys/syscall.h>') != ''
 
 if get_option('mailspool') != ''
